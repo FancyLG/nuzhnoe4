@@ -1,31 +1,23 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.db.db import Base
 
 class Category(Base):
-    __tablename__ = 'categories'
+    __tablename__ = "categories"
     
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False, unique=True)
     
-    # Связь с книгами
     books = relationship("Book", back_populates="category")
-    
-    def __repr__(self):
-        return f"<Category(id={self.id}, title='{self.title}')>"
 
 class Book(Base):
-    __tablename__ = 'books'
+    __tablename__ = "books"
     
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(String)
-    price = Column(Float)
-    url = Column(String, default='')
-    category_id = Column(Integer, ForeignKey('categories.id'))
+    price = Column(Integer, nullable=False)
+    url = Column(String, default="")
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     
-    # Связь с категорией
     category = relationship("Category", back_populates="books")
-    
-    def __repr__(self):
-        return f"<Book(id={self.id}, title='{self.title}', price={self.price})>"

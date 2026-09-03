@@ -1,26 +1,43 @@
 from app.db.db import SessionLocal
-from app.db.crud import get_categories, get_books
+from app.db import crud
 
 def main():
     db = SessionLocal()
     
     try:
-        categories = get_categories(db)
-        print("\nКатегории книг")
-        for category in categories:
-            print(f"ID: {category.id}, Название: {category.title}")
+        print("Книги по категориям:")
         
-        books = get_books(db)
-        print("\nВсе книги")
-        for book in books:
-            print(f"ID: {book.id}, Название: {book.title}, Цена: {book.price} руб., Категория: {book.category.title if book.category else 'Без категории'}")
+        categories = crud.get_categories(db)
         
-        print("\nКниги по категориям")
-        for category in categories:
-            print(f"\nКатегория: {category.title}")
-            for book in category.books:
-                print(f"  - {book.title} ({book.price} руб.)")
+        if not categories:
+            print("Категории не найдены")
+        else:
+            for category in categories:
+                print(f"\nКатегория: {category.title}")
+                print("---------------------------------------------------")
+                
+                books = crud.get_books_by_category(db, category.id)
+                if books:
+                    for book in books:
+                        print(f" • {book.title}")
+                        print(f"   Описание: {book.description}")
+                        print(f"   Цена: {book.price} ₽")
+                        print()
+                else:
+                    print("  Книг в этой категории нет\n")
         
+        print("Книги без категорий:")
+        
+        books_without = crud.get_books_without_category(db)
+        if books_without:
+            for book in books_without:
+                print(f" • {book.title}")
+                print(f"   Описание: {book.description}")
+                print(f"   Цена: {book.price} ₽")
+                print()
+        else:
+            print(" Нет книг без категории")
+                
     finally:
         db.close()
 

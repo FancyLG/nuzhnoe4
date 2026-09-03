@@ -2,71 +2,71 @@ from sqlalchemy.orm import Session
 from app.db import models
 
 def create_category(db: Session, title: str):
-    db_category = models.Category(title=title)
-    db.add(db_category)
+    category = models.Category(title=title)
+    db.add(category)
     db.commit()
-    db.refresh(db_category)
-    return db_category
+    db.refresh(category)
+    return category
 
-def get_category(db: Session, category_id: int):
+def get_categories(db: Session):
+    return db.query(models.Category).all()
+
+def get_category_by_id(db: Session, category_id: int):
     return db.query(models.Category).filter(models.Category.id == category_id).first()
 
-def get_category_by_title(db: Session, title: str):
-    return db.query(models.Category).filter(models.Category.title == title).first()
-
-def get_categories(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Category).offset(skip).limit(limit).all()
-
-def update_category(db: Session, category_id: int, title: str):
-    db_category = get_category(db, category_id)
-    if db_category:
-        db_category.title = title
+def update_category(db: Session, category_id: int, new_title: str):
+    category = get_category_by_id(db, category_id)
+    if category:
+        category.title = new_title
         db.commit()
-        db.refresh(db_category)
-    return db_category
+        db.refresh(category)
+    return category
 
 def delete_category(db: Session, category_id: int):
-    db_category = get_category(db, category_id)
-    if db_category:
-        db.delete(db_category)
+    category = get_category_by_id(db, category_id)
+    if category:
+        db.delete(category)
         db.commit()
-    return db_category
+    return category
 
-def create_book(db: Session, title: str, description: str, price: float, category_id: int, url: str = ''):
-    db_book = models.Book(
+def create_book(db: Session, title: str, description: str, price: int, category_id: int = None, url: str = ""):
+    book = models.Book(
         title=title,
         description=description,
         price=price,
-        url=url,
-        category_id=category_id
+        category_id=category_id,
+        url=url
     )
-    db.add(db_book)
+    db.add(book)
     db.commit()
-    db.refresh(db_book)
-    return db_book
+    db.refresh(book)
+    return book
 
-def get_book(db: Session, book_id: int):
-    return db.query(models.Book).filter(models.Book.id == book_id).first()
-
-def get_books(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Book).offset(skip).limit(limit).all()
+def get_books(db: Session):
+    return db.query(models.Book).all()
 
 def get_books_by_category(db: Session, category_id: int):
     return db.query(models.Book).filter(models.Book.category_id == category_id).all()
 
+def get_books_without_category(db: Session):
+    return db.query(models.Book).filter(models.Book.category_id.is_(None)).all()
+
+def get_book_by_id(db: Session, book_id: int):
+    return db.query(models.Book).filter(models.Book.id == book_id).first()
+
 def update_book(db: Session, book_id: int, **kwargs):
-    db_book = get_book(db, book_id)
-    if db_book:
+    book = get_book_by_id(db, book_id)
+    if book:
         for key, value in kwargs.items():
-            if hasattr(db_book, key):
-                setattr(db_book, key, value)
+            if hasattr(book, key):
+                setattr(book, key, value)
         db.commit()
-        db.refresh(db_book)
-    return db_book
+        db.refresh(book)
+    return book
 
 def delete_book(db: Session, book_id: int):
-    db_book = get_book(db, book_id)
-    if db_book:
-        db.delete(db_book)
+    book = get_book_by_id(db, book_id)
+    if book:
+        db.delete(book)
         db.commit()
-    return db_book
+    return book
