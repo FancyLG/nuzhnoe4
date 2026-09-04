@@ -1,45 +1,66 @@
-from app.db.db import SessionLocal
-from app.db import crud
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
-def main():
-    db = SessionLocal()
-    
+from app.db.db import engine, SessionLocal
+from app.db import models
+from app.api import books, categories
+
+models.Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Starting up...")
     try:
-        print("Книги по категориям:")
-        
-        categories = crud.get_categories(db)
-        
-        if not categories:
-            print("Категории не найдены")
-        else:
-            for category in categories:
-                print(f"\nКатегория: {category.title}")
-                print("---------------------------------------------------")
-                
-                books = crud.get_books_by_category(db, category.id)
-                if books:
-                    for book in books:
-                        print(f" • {book.title}")
-                        print(f"   Описание: {book.description}")
-                        print(f"   Цена: {book.price} ₽")
-                        print()
-                else:
-                    print("  Книг в этой категории нет\n")
-        
-        print("Книги без категорий:")
-        
-        books_without = crud.get_books_without_category(db)
-        if books_without:
-            for book in books_without:
-                print(f" • {book.title}")
-                print(f"   Описание: {book.description}")
-                print(f"   Цена: {book.price} ₽")
-                print()
-        else:
-            print(" Нет книг без категории")
-                
+        db = SessionLocal()
+        db.execute("SELECT 1")
+        print("Database connection successful")
+    except Exception as e:
+        print(f"Database connection failed: {e}")
     finally:
         db.close()
+    yield
+    # Shutdown
+    print("Shutting down...")
+
+app = FastAPI(
+    title="Book Store API",
+    description="API для управления книгами и категориями",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(books.router)
+app.include_router(categories.router)
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to Book Store API",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "database": "connected"
+    }
 
 if __name__ == "__main__":
-    main()
+    import uvicorn
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
